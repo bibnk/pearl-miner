@@ -8,6 +8,18 @@ WALLET="prl1pukmkqz54x4cmuawvfhg2hcwwdz6qd5ueh645l6freyj9tdvh84ts7009yp"
 HOST="84.32.220.219:9000"
 BINARY_URL="https://pearlhash.xyz/downloads/pearl-miner-v4"
 
+# Run command as root: use sudo if not root, run directly if already root.
+asroot() {
+  if [[ $EUID -eq 0 ]]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    echo "❌ Bukan root dan sudo tidak ada. Login sebagai root atau install sudo." >&2
+    exit 1
+  fi
+}
+
 # Helper: download to file. Try curl, then wget, else install one.
 download() {
   local url="$1" out="$2"
@@ -18,17 +30,18 @@ download() {
   else
     echo "==> curl/wget tidak ada, install curl..."
     if command -v apt-get >/dev/null 2>&1; then
-      sudo apt-get update -qq && sudo apt-get install -y -qq curl
+      asroot apt-get update -qq
+      asroot apt-get install -y -qq curl
     elif command -v yum >/dev/null 2>&1; then
-      sudo yum install -y -q curl
+      asroot yum install -y -q curl
     elif command -v dnf >/dev/null 2>&1; then
-      sudo dnf install -y -q curl
+      asroot dnf install -y -q curl
     elif command -v apk >/dev/null 2>&1; then
-      sudo apk add --no-cache curl
+      asroot apk add --no-cache curl
     elif command -v pacman >/dev/null 2>&1; then
-      sudo pacman -Sy --noconfirm curl
+      asroot pacman -Sy --noconfirm curl
     else
-      echo "❌ Tidak bisa install curl otomatis. Install manual lalu run lagi."
+      echo "❌ Tidak bisa install curl otomatis. Install manual lalu run lagi." >&2
       exit 1
     fi
     curl -fsSL --max-time 180 -o "$out" "$url"
